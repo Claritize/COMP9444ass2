@@ -29,6 +29,9 @@ import glob
 
 import implementation as imp
 
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+
 BATCH_SIZE = imp.BATCH_SIZE
 MAX_WORDS_IN_REVIEW = imp.MAX_WORDS_IN_REVIEW  # Maximum length of a review to consider
 EMBEDDING_SIZE = imp.EMBEDDING_SIZE  # Dimensions for each word vector
@@ -155,7 +158,7 @@ def train():
     # saver
     all_saver = tf.train.Saver()
 
-    sess = tf.InteractiveSession()
+    sess = tf.InteractiveSession(config=config)
     sess.run(tf.global_variables_initializer())
 
     logdir = "tensorboard/" + datetime.datetime.now().strftime(
@@ -193,7 +196,7 @@ def eval(data_path):
     num_samples = len(test_data)
     print("Loaded and preprocessed %s samples for evaluation" % num_samples)
 
-    sess = tf.InteractiveSession()
+    sess = tf.InteractiveSession(config=config)
     last_check = tf.train.latest_checkpoint('./checkpoints')
     saver = tf.train.import_meta_graph(last_check + ".meta")
     saver.restore(sess, last_check)
