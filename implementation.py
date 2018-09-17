@@ -32,8 +32,32 @@ def preprocess(review):
         - word find/replace
     RETURN: the preprocessed review in string form.
     """
+    #print(review+"\n")
+    
+    review = review.lower()
 
-    return processed_review
+    review = review.replace(",", " ")
+    review = review.replace("'", "")
+    review = review.replace("\"", "")
+    review = review.replace(":", "")
+    review = review.replace("/", "")
+    review = review.replace("_", " ")
+    review = review.replace("(", "")
+    review = review.replace(")", "")
+    review = review.replace("/><br", "")
+    review = review.replace("/>", "")
+    review = review.replace("<br", "")
+    review = review.replace(")", "")
+    review = review.replace("<", "")
+    review = review.replace(">", "")
+    review = review.replace("*", "")
+    review = review.replace("vs.", "versus")
+    
+    review = " ".join(review.split())
+    
+    #print(review+"\n")
+
+    return review
 
 
 
