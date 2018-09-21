@@ -77,4 +77,9 @@ def define_graph():
     RETURNS: input, labels, optimizer, accuracy and loss
     """
 
+    #placeholder for data
+    input_data = tf.placeholder(tf.float32, name="input_data")
+    labels = tf.placeholder(tf.float32, name="labels")
+    print(tf.shape(input_data))
+
     return input_data, labels, dropout_keep_prob, optimizer, Accuracy, loss
