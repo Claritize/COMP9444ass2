@@ -2,3 +2,5 @@ data/
 Assignment2.zip
 glove.6B.50d.txt
 embeddings.pkl
+checkpoints/
+tensorboard/

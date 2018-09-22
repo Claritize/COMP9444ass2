@@ -52,14 +52,10 @@ def preprocess(review):
     review = review.replace(">", "")
     review = review.replace("*", "")
     review = review.replace("vs.", "versus")
-    
+
     review = " ".join(review.split())
-    
-    #print(review+"\n")
 
     return review
-
-
 
 def define_graph():
     """
@@ -78,8 +74,27 @@ def define_graph():
     """
 
     #placeholder for data
-    input_data = tf.placeholder(tf.float32, name="input_data")
-    labels = tf.placeholder(tf.float32, name="labels")
-    print(tf.shape(input_data))
+    input_data = tf.placeholder(tf.float32, name="input_data", shape=[BATCH_SIZE, MAX_WORDS_IN_REVIEW, EMBEDDING_SIZE])
+    labels = tf.placeholder(tf.float32, name="labels", shape=[BATCH_SIZE, 2])
+    
+    dropout_keep_prob = tf.placeholder_with_default(1.0, shape=())
+    #rnn = tf.contrib.rnn.GRUCell(125, activation=tf.nn.relu)
+    #drop0 = tf.contrib.rnn.DropoutWrapper(rnn, output_keep_prob=dropout_keep_prob)
+    #outputs, state = tf.nn.dynamic_rnn(drop0, input_data, dtype=tf.float32)
+    lstm = tf.contrib.rnn.BasicLSTMCell(100)
+    state = lstm.zero_state(BATCH_SIZE, dtype=tf.float32)
+    drop0 = tf.contrib.rnn.DropoutWrapper(lstm, output_keep_prob=dropout_keep_prob)
+    outputs, state = tf.nn.dynamic_rnn(drop0, input_data, dtype=tf.float32)
+    dense = tf.layers.dense(outputs[:,-1], 100, activation=tf.nn.relu)
+    drop1 = tf.layers.dropout(dense, rate=(1-dropout_keep_prob))
+    logits = tf.layers.dense(drop1, 2, activation=None)
+
+    error = tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits, labels=labels)
+    loss = tf.reduce_sum(error, name="loss")
+    optimizer = tf.train.AdamOptimizer(learning_rate=0.001).minimize(loss)
+
+    preds = tf.nn.softmax(logits)
+    correct = tf.equal(tf.argmax(preds, axis=1), tf.argmax(labels, axis=1))
+    Accuracy = tf.reduce_mean(tf.cast(correct, tf.float32), name="accuracy")
 
     return input_data, labels, dropout_keep_prob, optimizer, Accuracy, loss

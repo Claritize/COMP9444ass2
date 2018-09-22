@@ -56,7 +56,7 @@ def load_data(path='./data/train'):
     file_list.extend(glob.glob(os.path.join(dir, path + '/neg/*')))
     print("Parsing %s files" % len(file_list))
     for i, f in enumerate(file_list):
-        with open(f, "r") as openf:
+        with open(f, 'r', encoding='utf-8') as openf:
             s = openf.read()
             data.append(imp.preprocess(s))  # NOTE: Preprocessing code called here on all reviews
     return data
