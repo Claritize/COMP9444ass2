@@ -57,6 +57,9 @@ def preprocess(review):
 
     return review
 
+def lstm_cell():
+    return tf.contrib.rnn.BasicLSTMCell(150)
+
 def define_graph():
     """
     Implement your model here. You will need to define placeholders, for the input and labels,
@@ -75,17 +78,17 @@ def define_graph():
 
     #placeholder for data
     input_data = tf.placeholder(tf.float32, name="input_data", shape=[BATCH_SIZE, MAX_WORDS_IN_REVIEW, EMBEDDING_SIZE])
+    #placeholder for labels
     labels = tf.placeholder(tf.float32, name="labels", shape=[BATCH_SIZE, 2])
     
     dropout_keep_prob = tf.placeholder_with_default(1.0, shape=())
-    #rnn = tf.contrib.rnn.GRUCell(125, activation=tf.nn.relu)
-    #drop0 = tf.contrib.rnn.DropoutWrapper(rnn, output_keep_prob=dropout_keep_prob)
-    #outputs, state = tf.nn.dynamic_rnn(drop0, input_data, dtype=tf.float32)
-    lstm = tf.contrib.rnn.BasicLSTMCell(100)
-    state = lstm.zero_state(BATCH_SIZE, dtype=tf.float32)
-    drop0 = tf.contrib.rnn.DropoutWrapper(lstm, output_keep_prob=dropout_keep_prob)
+    #lstm = tf.contrib.rnn.BasicLSTMCell(200)
+    #state = lstm.zero_state(BATCH_SIZE, dtype=tf.float32)
+    stacked_lstm = tf.contrib.rnn.MultiRNNCell([lstm_cell() for _ in range(2)])
+    state = stacked_lstm.zero_state(BATCH_SIZE, tf.float32)
+    drop0 = tf.contrib.rnn.DropoutWrapper(stacked_lstm, output_keep_prob=dropout_keep_prob)
     outputs, state = tf.nn.dynamic_rnn(drop0, input_data, dtype=tf.float32)
-    dense = tf.layers.dense(outputs[:,-1], 100, activation=tf.nn.relu)
+    dense = tf.layers.dense(outputs[:,-1], 50, activation=tf.nn.relu)
     drop1 = tf.layers.dropout(dense, rate=(1-dropout_keep_prob))
     logits = tf.layers.dense(drop1, 2, activation=None)
 
