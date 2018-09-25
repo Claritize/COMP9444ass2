@@ -58,7 +58,7 @@ def preprocess(review):
     return review
 
 def lstm_cell():
-    return tf.contrib.rnn.BasicLSTMCell(150)
+    return tf.contrib.rnn.BasicLSTMCell(100)
 
 def define_graph():
     """
@@ -81,13 +81,15 @@ def define_graph():
     #placeholder for labels
     labels = tf.placeholder(tf.float32, name="labels", shape=[BATCH_SIZE, 2])
     
-    dropout_keep_prob = tf.placeholder_with_default(1.0, shape=())
+    dropout_keep_prob = tf.placeholder_with_default(0.5, shape=())
     #lstm = tf.contrib.rnn.BasicLSTMCell(200)
     #state = lstm.zero_state(BATCH_SIZE, dtype=tf.float32)
+    conv = tf.layers.conv1d(input_data, 32, 3, activation=tf.nn.relu)
+    pool = tf.layers.max_pooling1d(conv, 2, 1)
     stacked_lstm = tf.contrib.rnn.MultiRNNCell([lstm_cell() for _ in range(2)])
     state = stacked_lstm.zero_state(BATCH_SIZE, tf.float32)
     drop0 = tf.contrib.rnn.DropoutWrapper(stacked_lstm, output_keep_prob=dropout_keep_prob)
-    outputs, state = tf.nn.dynamic_rnn(drop0, input_data, dtype=tf.float32)
+    outputs, state = tf.nn.dynamic_rnn(drop0, pool, dtype=tf.float32)
     dense = tf.layers.dense(outputs[:,-1], 50, activation=tf.nn.relu)
     drop1 = tf.layers.dropout(dense, rate=(1-dropout_keep_prob))
     logits = tf.layers.dense(drop1, 2, activation=None)
