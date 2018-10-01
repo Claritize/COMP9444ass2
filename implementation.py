@@ -36,14 +36,14 @@ def preprocess(review):
     
     review = review.lower()
 
-    review = review.replace(",", " ")
-    review = review.replace("'", "")
-    review = review.replace("\"", "")
-    review = review.replace(":", "")
-    review = review.replace("/", "")
-    review = review.replace("_", " ")
-    review = review.replace("(", "")
-    review = review.replace(")", "")
+    #review = review.replace(",", " ")
+    #review = review.replace("'", "")
+    #review = review.replace("\"", "")
+    #review = review.replace(":", "")
+    #review = review.replace("/", "")
+    #review = review.replace("_", " ")
+    #review = review.replace("(", "")
+    #review = review.replace(")", "")
     review = review.replace("/><br", "")
     review = review.replace("/>", "")
     review = review.replace("<br", "")
@@ -58,7 +58,7 @@ def preprocess(review):
     return review
 
 def lstm_cell():
-    return tf.contrib.rnn.BasicLSTMCell(100)
+    return tf.contrib.rnn.BasicLSTMCell(128)
 
 def define_graph():
     """
@@ -81,23 +81,39 @@ def define_graph():
     #placeholder for labels
     labels = tf.placeholder(tf.float32, name="labels", shape=[BATCH_SIZE, 2])
     
-    dropout_keep_prob = tf.placeholder_with_default(0.5, shape=())
-    #lstm = tf.contrib.rnn.BasicLSTMCell(200)
-    #state = lstm.zero_state(BATCH_SIZE, dtype=tf.float32)
+    #dropout probability
+    dropout_keep_prob = tf.placeholder_with_default(1.0, shape=())
+
+    #first convolution layer
     conv = tf.layers.conv1d(input_data, 32, 3, activation=tf.nn.relu)
+
+    #pooling layer
     pool = tf.layers.max_pooling1d(conv, 2, 1)
-    stacked_lstm = tf.contrib.rnn.MultiRNNCell([lstm_cell() for _ in range(2)])
+
+    batch = tf.layers.batch_normalization(pool)
+
+    #initialsing LSTM layer
+    stacked_lstm = tf.contrib.rnn.MultiRNNCell([lstm_cell() for _ in range(1)])
     state = stacked_lstm.zero_state(BATCH_SIZE, tf.float32)
+
+    #dropout for LSTM layer
     drop0 = tf.contrib.rnn.DropoutWrapper(stacked_lstm, output_keep_prob=dropout_keep_prob)
-    outputs, state = tf.nn.dynamic_rnn(drop0, pool, dtype=tf.float32)
-    dense = tf.layers.dense(outputs[:,-1], 50, activation=tf.nn.relu)
+
+    #running the LSTM layer
+    outputs, state = tf.nn.dynamic_rnn(drop0, batch, dtype=tf.float32)
+
+    #dense layer to produce logits
+    dense = tf.layers.dense(outputs[:,-1], 100, activation=tf.nn.sigmoid)
     drop1 = tf.layers.dropout(dense, rate=(1-dropout_keep_prob))
     logits = tf.layers.dense(drop1, 2, activation=None)
 
+    #generating error rate and loss calculations
     error = tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits, labels=labels)
     loss = tf.reduce_sum(error, name="loss")
+    #loss = tf.losses.softmax_cross_entropy(labels, logits=logits)
     optimizer = tf.train.AdamOptimizer(learning_rate=0.001).minimize(loss)
 
+    #generatring accuracy and correctness
     preds = tf.nn.softmax(logits)
     correct = tf.equal(tf.argmax(preds, axis=1), tf.argmax(labels, axis=1))
     Accuracy = tf.reduce_mean(tf.cast(correct, tf.float32), name="accuracy")
